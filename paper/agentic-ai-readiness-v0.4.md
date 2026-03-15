@@ -97,7 +97,7 @@ Two patterns are worth noting. First, Tier 3 caps are deliberately lower than Ti
 Budgets require deterministic escalation triggers. Approval is required when a plan includes any write action above defined thresholds. Lockdown mode is required when injection signals or anomalies occur, switching the agent to read only behavior while requesting human review. Human takeover is required when rollback is unavailable or when privileged actions are requested.
 
 3.4 Deliverable  
-Appendix A provides a one page autonomy budget template that teams can adopt per tier.
+Appendix A provides an autonomy budget template that teams can adopt per tier.
 
 4. Failure modes that matter in production
 
@@ -157,10 +157,15 @@ The table below consolidates the minimum bar into a scannable format. **R** = re
 | Evidence continuity across agents | | | | R |
 
 5.3 Pass or fail rules  
+Any control dimension marked **R** in the scorecard matrix (Section 5.2) that cannot be demonstrated is a rollout blocker for that tier. The following rules make explicit the highest-consequence blockers.
+
 If rollback does not exist for a write action, that action is not eligible for Tier 2 automation.  
 If credentials cannot be scoped by tool, action type, and resource, Tier 3 is not eligible.  
 If approvals do not expose targets and diffs, approvals are not controls and cannot be used to justify Tier 2 or Tier 3 readiness.  
-If untrusted tool outputs can influence tool invocation parameters without isolation, Tier 2 and above is not eligible.
+If untrusted tool outputs can influence tool invocation parameters without isolation, Tier 2 and above is not eligible.  
+If audit events are not emitted for all tool calls with the required fields (Section 7.1), no tier above Tier 1 is eligible.  
+If lockdown mode cannot be triggered without model cooperation (Section 6.5), Tier 3 is not eligible.  
+If delegation boundaries are not enforced by the control plane, Tier 4 is not eligible.
 
 6. Control patterns that actually work
 
@@ -205,6 +210,12 @@ A common gap is that lockdown is implemented as a message sent to the agent aski
 
 6.6 Evidence records for every write  
 Tier 2 and above requires a minimal evidence record tying together intent, enumerated targets, approvals, tool calls, and outcomes. This is necessary for accountability and post incident reconstruction. It also prevents untraceable automation from becoming normal practice.
+
+At minimum, each evidence record must contain: (1) the intent reference — the original request identifier or ticket that authorized the task; (2) the enumerated target set — the explicit list of resources the action was permitted to affect; (3) the approval identifier and timestamp; (4) the tool call log — the sequence of tool invocations with parameters, in order; (5) the outcome for each tool call, including success, failure, or partial completion; and (6) the rollback identifier, when a rollback procedure exists for the action type.
+
+Evidence records must be written to append-only storage that the agent cannot modify or delete. If the agent can overwrite its own evidence records, the records are not evidence. The control plane, not the agent, is responsible for committing the record at the close of each write action.
+
+The operational signature of an evidence record gap is a write action with an outcome in the target system that cannot be traced to an approved plan. This is the condition that makes post-incident reconstruction impossible and that transforms a recoverable error into an audit finding. Any gap in evidence records during assisted write mode or above is a regression condition under the rollout ladder (Section 9).
 
 6.7 Multi agent delegation controls (Tier 4)  
 Delegation must be explicit and constrained. Each delegated task must carry an immutable context bundle containing the approved plan reference, target constraints, applicable autonomy budget, and evidence record identifier. Delegates must be prevented from expanding scope beyond inherited constraints. For privileged actions, delegation requires separation of duties, with approvals bound to the specific delegate action type and target set.
@@ -317,7 +328,7 @@ Expanded write scope within a bounded domain, with enforced budgets, anomaly tri
 
 Entry criteria. Assisted write mode exit criteria met. Lockdown mode is tested and verified to halt execution within TDH target under injection scenarios. Anomaly detection signals are wired to lockdown triggers, not only dashboards. The domain boundary (the set of systems and resource types within scope) is explicitly defined and enforced by the tool registry and credential scoping.
 
-Exit criteria. Not applicable for most deployments; bounded autonomy is the target steady state for Tier 2 workflows. Advancement to privileged autonomy (Tier 3) requires a separate readiness assessment.
+Exit criteria. Not applicable for most deployments; bounded autonomy is the target steady state for Tier 2 workflows. Advancement to privileged autonomy (Tier 3) requires a separate readiness assessment. Continued eligibility at steady state requires that UAR remains at 0, RSR remains at 1.0 in all rollback drills, and BRS does not trend upward across requalification runs. A requalification run that exceeds the BRS baseline established during assisted write mode is treated as a regression.
 
 Requalification cadence. The full harness suite must be re-run whenever the model is updated, the tool registry changes, or the autonomy budget is modified. A requalification run that produces regressions against prior baseline metrics suspends advancement and requires root cause analysis.
 
@@ -341,13 +352,13 @@ Regression condition. Any nonzero UAR in production, any POI > 0 for a privilege
 10. Real world anchors
 
 10.1 GitLab database outage and rollback reality  
-GitLab's 2017 incident shows how a single mistaken destructive action can cause major data loss and how recovery depends on tested backups and practiced procedures, not on good intentions. Control implication. Tier 2 requires tested rollback for every permitted write action. Tier 3 requires additional separation of duties and pre-execution safety gates. Metric linkage. Rollback Success Rate, Time to Detect and Halt.
+GitLab's 2017 incident shows how a single mistaken destructive action can cause major data loss and how recovery depends on tested backups and practiced procedures, not on good intentions. Control implication. Tier 2 requires tested rollback for every permitted write action. Tier 3 requires additional separation of duties and pre-execution safety gates. Metric linkage. Rollback Success Rate (RSR, Section 8.2); Time to Detect and Halt (TDH, Section 8.2).
 
 10.2 Deepfake enabled fraud and approval weakness  
-Arup's disclosed deepfake scam demonstrates that human approval is not automatically a safety control. Humans can be socially engineered into authorizing transfers in workflows that appear legitimate. Control implication. Approvals must be tied to concrete diffs, target visibility, and policy thresholds. High impact actions require multi factor verification beyond a single conversational confirmation. Metric linkage. Unauthorized Action Rate, approval quality measures, anomaly detection time.
+Arup's disclosed deepfake scam demonstrates that human approval is not automatically a safety control. Humans can be socially engineered into authorizing transfers in workflows that appear legitimate. Control implication. Approvals must be tied to concrete diffs, target visibility, and policy thresholds. High impact actions require multi factor verification beyond a single conversational confirmation. Metric linkage. Unauthorized Action Rate (UAR, Section 8.2); anomaly detection time as measured by TDH (Section 8.2).
 
 10.3 Agentic prompt injection and tool chain compromise  
-Reports in early 2026 describe prompt injection being used to drive unauthorized installation or execution behaviors in agent-adjacent workflows, including supply chain style abuse patterns. Control implication. Untrusted content must be isolated from instruction channels. Tool execution must be schema constrained and governed by enforceable budgets, with lockdown behavior triggered by anomalies. Metric linkage. Injection Success Rate, Blast Radius Score, Time to Detect and Halt.
+Reports in early 2026 describe prompt injection being used to drive unauthorized installation or execution behaviors in agent-adjacent workflows, including supply chain style abuse patterns. Control implication. Untrusted content must be isolated from instruction channels. Tool execution must be schema constrained and governed by enforceable budgets, with lockdown behavior triggered by anomalies. Metric linkage. Injection Success Rate (ISR, Section 8.2); Blast Radius Score (BRS, Section 8.2); Time to Detect and Halt (TDH, Section 8.2).
 
 11. Conclusion  
 Agentic AI is a deployment shape that turns model outputs into state changes. That shift requires a readiness discipline grounded in enforceable controls, auditability, and recovery. A practical readiness model consists of capability tiers, autonomy budgets, measurable scorecards, adversarial evaluation harnesses, and a phased rollout ladder. Teams can adopt agents safely in bounded domains when they treat autonomy as a privilege earned through controls and measurement rather than as a default entitlement of model capability.
@@ -355,7 +366,7 @@ Agentic AI is a deployment shape that turns model outputs into state changes. Th
 Appendix A. Autonomy Budget Template
 
 A.1 Purpose  
-This template defines enforceable caps for tool-using agents. Budgets are tier-specific and must be enforced by the control plane, not by prompts. Budgets exist to bound blast radius when ambiguity, injection, or tool misuse occurs.
+This template defines enforceable caps for tool-using agents. Budgets are tier-specific and must be enforced by the control plane, not by prompts. Budgets exist to bound blast radius when ambiguity, injection, or tool misuse occurs. Suggested starting values for each cap by tier are provided in Section 3.2. Use those values as the calibration anchor when filling out this template.
 
 A.2 Budget Record  
 Budget ID: _______________________________  
@@ -415,3 +426,17 @@ Appendix E. Audit event schema examples
 Appendix F. Evaluation scenario suite  
 Appendix G. Rollout checklists  
 Appendix H. Related work and references (including S.A.F.E. Intent Framework RFC draft)
+
+References
+
+[1] GitLab Postmortem of database outage of January 31, 2017.  
+https://about.gitlab.com/blog/postmortem-of-database-outage-of-january-31/
+
+[2] Reported deepfake enabled fraud involving Arup (Hong Kong). Example coverage:  
+https://www.theguardian.com/technology/article/2024/may/17/uk-engineering-arup-deepfake-scam-hong-kong-ai-video
+
+[3] Reporting on agentic prompt injection and related incidents. Example coverage:  
+https://www.theverge.com/ai-artificial-intelligence/881574/cline-openclaw-prompt-injection-hack
+
+[4] Corral, Rogel S.J. SAFE Intent Framework (RFC-style draft).  
+https://doi.org/10.5281/zenodo.18896883
