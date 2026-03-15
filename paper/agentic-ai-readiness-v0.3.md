@@ -142,7 +142,22 @@ When anomaly signals trigger, the agent should default to read only behavior, st
 Tier 2 and above requires a minimal evidence record tying together intent, enumerated targets, approvals, tool calls, and outcomes. This is necessary for accountability and post incident reconstruction. It also prevents untraceable automation from becoming normal practice.
 
 6.7 Multi agent delegation controls (Tier 4)  
-Delegation must be explicit and constrained. Each delegated task must carry an immutable context bundle containing the approved plan reference, target constraints, applicable autonomy budget, and evidence record identifier. Delegates must be prevented from expanding scope beyond inherited constraints. Cross agent communication channels must treat all inbound messages as untrusted data unless signed by the control plane. For privileged actions, delegation requires separation of duties, with approvals bound to the specific delegate action type and target set.
+Delegation must be explicit and constrained. Each delegated task must carry an immutable context bundle containing the approved plan reference, target constraints, applicable autonomy budget, and evidence record identifier. Delegates must be prevented from expanding scope beyond inherited constraints. For privileged actions, delegation requires separation of duties, with approvals bound to the specific delegate action type and target set.
+
+Cross agent communication verification patterns  
+Cross agent messages must be treated as untrusted data unless verified by the control plane. The objective is to prevent a compromised agent, poisoned content, or external injection from causing other agents to accept instructions outside approved constraints.
+
+Message envelope. Each cross agent message should include a structured envelope with the following fields: message identifier, sender identifier, recipient identifier, timestamp, expiration time, conversation or task identifier, approved plan reference, autonomy budget identifier, and a payload hash. The payload must not be executable instructions. It must be structured data that the recipient validates against its schemas.
+
+Signature or token binding. The envelope must be bound to an authenticity mechanism. Two acceptable patterns are common in practice. First, the control plane issues a short lived signed token to the sender for a specific task identifier and recipient set. The recipient validates the token and rejects it if the task identifier, recipient, expiration, or privileges do not match. Second, the control plane signs the envelope, and the recipient verifies the signature using a pinned control plane public key. In both patterns, trust is placed in the control plane, not in other agents.
+
+Replay protection. Every envelope must contain a nonce or monotonic sequence number. Recipients must maintain a short lived replay cache keyed by sender and task identifier. Envelopes that repeat nonces, violate sequence ordering, or exceed expiration must be rejected.
+
+Scope binding. Recipients must validate that incoming messages reference an existing approved plan and an applicable autonomy budget. If the message cannot be bound to an approval artifact, the recipient must treat it as untrusted context only and must not translate it into tool calls or plan changes.
+
+Quorum gating for privileged actions. For delegated privileged actions, require either a human approval bound to the delegate’s action and target set, or a quorum rule such as two independent delegates agreeing on the same schema valid action proposal. Quorum is not a replacement for approvals at Tier 3. It is an additional safeguard against single agent compromise.
+
+Failure behavior. If verification fails, the recipient must enter lockdown mode for the affected task, refuse tool execution, and emit an audit event indicating rejection reason and envelope metadata.
 
 7. Observability and audit
 
