@@ -1,0 +1,60 @@
+agentic-ai-readiness Repository License Overview
+
+Copyright 2026 Rogel S.J. Corral
+
+This repository contains materials released under multiple licenses.
+
+Documentation
+-------------
+The following files and directories are licensed under the
+Creative Commons Attribution-ShareAlike 4.0 International License
+(CC BY-SA 4.0):
+
+- README.md
+- CHANGELOG.md
+- paper/ (all contents, including .md and .pdf drafts)
+- paper/figures/ (including any figure source files unless otherwise stated)
+- paper/appendices/ (all contents)
+- paper/references/ (all contents)
+- .github/ (all contents, including issue and PR templates)
+
+License text: LICENSES/CC-BY-SA-4.0.txt
+
+Examples and Sample Artifacts
+-----------------------------
+Examples and sample artifacts intended for reuse are licensed under the
+MIT License:
+
+- examples/ (all contents, including .md templates and .json examples)
+
+License text: LICENSES/MIT.txt
+
+Tools and Harness Code
+----------------------
+If code is added under tools/ (scripts, harness implementations, utilities),
+it is licensed under the Apache License, Version 2.0:
+
+- tools/ (all contents)
+
+License text: LICENSES/Apache-2.0.txt
+
+Metadata Files
+--------------
+The following metadata files are licensed under CC BY-SA 4.0 unless a
+specific file header states otherwise:
+
+- CITATION.cff
+
+License text: LICENSES/CC-BY-SA-4.0.txt
+
+Repository Administration
+-------------------------
+The LICENSE file in the repository root is a licensing overview only.
+The full license texts are provided in the LICENSES/ directory as referenced
+above.
+
+Unless otherwise stated in individual files, the applicable license is
+determined by the directory in which the file resides.
+
+Individual files may also contain their own license headers, which take
+precedence over directory-level licensing.
