@@ -1,0 +1,70 @@
+# --- OS junk ---
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# --- Editor/IDE ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.tmp
+*.bak
+
+# --- Logs ---
+*.log
+
+# --- Archives ---
+*.zip
+*.tar
+*.tar.gz
+*.7z
+*.rar
+
+# --- Node / JS tooling (if you add later) ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- Python tooling (if you add later) ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+pip-wheel-metadata/
+.pytest_cache/
+
+# --- LaTeX build artifacts (optional) ---
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.lof
+*.lot
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+*.nav
+*.snm
+*.vrb
+
+# --- PDFs (choose one approach) ---
+# If you generate PDFs locally and do NOT want them committed, uncomment:
+# *.pdf
+# If you DO commit release PDFs (recommended for this repo), keep PDFs tracked:
+!paper/*.pdf
+
+# --- Local working files ---
+*.orig
+*.rej
