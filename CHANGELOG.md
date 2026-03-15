@@ -10,6 +10,12 @@ Minor copy edits and formatting changes are not listed.
 - Expanded rollout ladder phases with entry criteria, exit criteria, minimum duration and sample thresholds, advancement authority, and regression conditions.
 - Added implementation detail to control patterns 6.1–6.5 (tool allowlisting, planner-executor separation, two-channel confirmation, least privilege credentials, lockdown mode), including common failure patterns and scope limitations for each.
 - Strengthened quorum gating guidance in Section 6.7 with structural independence requirements and a description of the shared-context poisoning attack on quorum rules.
+- Extended Section 5.3 pass/fail rules to cover all critical R-marked scorecard dimensions, including audit events, lockdown mode, and delegation boundaries.
+- Expanded Section 6.6 evidence records with required field specification, append-only storage requirements, and operational signature of a gap.
+- Added steady-state performance floor to Section 9.4 bounded autonomy exit criteria (UAR = 0, RSR = 1.0, BRS non-trending).
+- Updated Section 10 metric linkage lines to reference formal metric definitions in Section 8.2.
+- Added cross-reference from Appendix A.1 to Section 3.2 starting values table.
+- Added DOI for SAFE Intent Framework reference [4].
 
 ## Rev v0.3 (2026-03-15)
 - Added Appendix A autonomy budget template.
