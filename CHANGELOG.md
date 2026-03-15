@@ -3,6 +3,14 @@
 This document tracks substantive changes to the paper and its operational artifacts.
 Minor copy edits and formatting changes are not listed.
 
+## Rev v0.4 (2026-03-15)
+- Added tier-differentiated autonomy budget starting values (T1–T4) with a reference table for 11 cap dimensions.
+- Expanded readiness scorecard with an inline control matrix mapping all six dimensions to tiers, formatted as a rollout blocker checklist.
+- Operationalized all six evaluation metrics (UAR, ISR, TDH, RSR) with formal definitions, denominator formulas, measurement windows, and interpretation guidance to match the existing BRS and POI specifications.
+- Expanded rollout ladder phases with entry criteria, exit criteria, minimum duration and sample thresholds, advancement authority, and regression conditions.
+- Added implementation detail to control patterns 6.1–6.5 (tool allowlisting, planner-executor separation, two-channel confirmation, least privilege credentials, lockdown mode), including common failure patterns and scope limitations for each.
+- Strengthened quorum gating guidance in Section 6.7 with structural independence requirements and a description of the shared-context poisoning attack on quorum rules.
+
 ## Rev v0.3 (2026-03-15)
 - Added Appendix A autonomy budget template.
 - Defined calculation guidance for Blast Radius Score and Privilege Overreach Index.
