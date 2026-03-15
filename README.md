@@ -1,4 +1,4 @@
-# agentic-ai-readiness
+# Operational Readiness Criteria for Tool-Using LLM Agents
 
 Operational readiness criteria for tool-using LLM agents: autonomy budgets, controls, metrics, and rollout gates for delegated autonomy.
 
