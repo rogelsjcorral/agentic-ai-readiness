@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite it as below."
+type: report
+title: "Operational Readiness Criteria for Tool-Using LLM Agents"
+subtitle: "Controls, Metrics, and Rollout Gates for Delegated Autonomy"
+authors:
+  - family-names: "Corral"
+    given-names: "Rogel S.J."
+    affiliation: "Independent Researcher"
+repository-code: "https://github.com/rogelsjcorral/agentic-ai-readiness"
+license: "CC-BY-4.0"
+version: "0.3"
+date-released: "2026-03-15"
+keywords:
+  - agentic ai
+  - llm agents
+  - tool use
+  - delegated autonomy
+  - operational readiness
+  - governance
+  - auditability
+  - rollback
+abstract: >
+  A practical readiness model for deploying tool-using LLM agents, including
+  capability tiers, autonomy budgets, readiness scorecards, audit requirements,
+  evaluation harnesses, and phased rollout gates for delegated autonomy.
