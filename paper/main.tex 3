@@ -1,0 +1,437 @@
+% agentic-ai-readiness-v0.3.tex (refined)
+\documentclass[11pt]{article}
+
+% Page and typography
+\usepackage[margin=1in]{geometry}
+\usepackage{newtxtext,newtxmath} % Times-like text and math
+\usepackage[T1]{fontenc}
+
+% Tables and layout
+\usepackage{array}
+\usepackage{longtable}
+
+% Links
+\usepackage[hidelinks]{hyperref}
+\usepackage{url}
+
+% Symbols
+\usepackage{amssymb}
+
+\title{Operational Readiness Criteria for Tool-Using LLM Agents\\
+\large Controls, Metrics, and Rollout Gates for Delegated Autonomy}
+\author{Rogel S.J. Corral\\Independent Researcher}
+\date{Draft v0.5\\Status: For Community Review\\Date: 2026-03-17}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Agentic AI changes the deployment shape of LLM systems. When an LLM can plan, call tools, and execute multi step actions, the primary risk shifts from incorrect text to incorrect state change. This field manual proposes an operational readiness approach for deploying tool using agents, including capability tiers, an autonomy budget, a readiness scorecard, and an evaluation harness with measurable metrics. The goal is not to argue for or against agents. The goal is to define a minimum operational bar for delegated autonomy and a rollout approach that reduces preventable incidents.
+\end{abstract}
+
+\section*{Document type and intent}
+This document is written as an operational field manual. It provides deployment readiness criteria, control patterns, and evaluation methods for tool using LLM agents. It is designed to be applied in production environments and to support rollout gating, auditability, and recovery planning.
+
+\section*{Intended audience}
+This document is intended for engineering teams responsible for deploying and operating tool using agents, including platform engineering, security engineering, SRE and operations teams, and product teams shipping agents with write capable tools.
+
+\section*{Assumptions}
+This document assumes the agent can call tools that interact with external systems. It assumes that some actions can change state and that at least some deployments involve privileged or high impact workflows.
+
+\section*{How to use this document}
+Use Sections 4 through 9 as an implementation sequence. Identify relevant failure modes, apply the readiness scorecard, implement the control patterns, instrument audit events, validate with the evaluation harness, then roll out by phase using the rollout ladder. Treat Tier 2 and above as ineligible until rollback and evidence capture requirements are met.
+
+\section*{Normative language}
+This document uses plain requirement language for deployability. When it states that a capability requires a control, it indicates a recommended deployment gate for that capability tier.
+
+\section*{Statement of scope}
+This document is an operations focused guide for teams deploying tool using agents in real systems. It prioritizes concrete controls, measurable gates, and recovery requirements. It is not a vendor comparison, not a policy manifesto, and not a claim that agentic AI is inherently unsafe. It treats agentic AI as a capability upgrade with an expanded attack surface.
+
+\section{Definitions and scope}
+
+\subsection{Definitions}
+Agent. An LLM driven system that can plan and execute actions via tools across multiple steps, with some persistent state in the form of session state or durable memory, under delegated authority.\\
+Tool. A callable interface that can read from or write to an external system, including an API, database, file store, SaaS application, or internal service.\\
+Action. A tool invocation that creates observable effects in an external system.\\
+Write action. An action that creates, modifies, deletes, transfers, publishes, grants access, revokes access, or otherwise changes state.\\
+Privileged action. A write action with high impact, such as changing identity and access controls, moving money, modifying production infrastructure, deleting records, or altering audit logs.\\
+Approval. A human confirmation step that authorizes a proposed action plan or a specific action, tied to an auditable approval identifier.\\
+Evidence record. A minimal artifact set that explains why an action was taken, what inputs were used, what was approved, and what outcome occurred.\\
+Rollback. A defined method to revert a write action, including a tested procedure and known failure conditions.\\
+Session state. Short lived working context used during a single run.\\
+Durable memory. State that persists across sessions, such as notes, profiles, preferences, cached facts, or stored plans.
+
+\subsection{Agent shapes in scope}
+This document considers three common agent deployment shapes. In a single agent tool user shape, one model both plans and executes tool calls. In a planner executor split, a planner proposes actions and an executor performs constrained tool calls. In multi agent orchestration, multiple agents coordinate, delegate, or vote on plans and actions. These shapes differ in enforceability, audit complexity, and blast radius, and therefore affect readiness requirements.
+
+\subsection{Deployment environments in scope}
+This document addresses agents used in internal enterprise automation, customer facing workflows with tool access, and administrative or security sensitive workflows, including identity, finance, and infrastructure.
+
+\subsection{Non goals}
+This document does not propose new model architectures or training methods. It does not claim formal proof of safety. It does not make universal policy claims about social impact.
+
+\section{Why agents change the operational risk model}
+
+\subsection{From answers to actions}
+In a chat system, the primary failure is incorrect text. In an agent system, outputs can become actions via tools and credentials. The primary failure mode becomes incorrect state change. This matters because state change can be irreversible, expensive, or silently harmful. The operational question is therefore not only whether a response is correct, but whether a proposed action is authorized, bounded in scope, reversible, and auditable.
+
+\subsection{Compounding risk through multi step execution}
+Agent systems commonly operate in loops. Looping introduces compounding error in two ways. First, small interpretation errors can cascade into multiple tool calls. Second, the agent can generate new context from its own actions and then use that context to justify further actions. This increases blast radius even when each individual step appears reasonable in isolation.
+
+\subsection{Retrieval and memory as attack surfaces}
+Tool outputs can contain untrusted content, including web pages, emails, tickets, logs, and documents. Durable memory can persist incorrect or adversarial inputs across sessions. In both cases, an agent can treat untrusted data as instructions unless explicit isolation, validation, and execution gating controls exist.
+
+\subsection{Core principle}
+Autonomy must be earned by controls and measurement, not assumed from model capability.
+
+\section{Capability tiers and the autonomy budget}
+
+\subsection{Capability tiers}
+Tier 0. No tools, advice only. The system provides guidance with no external effects.\\
+Tier 1. Read only tools. The system can retrieve information, such as search or knowledge base lookup, but cannot write or change state.\\
+Tier 2. Write tools in bounded systems. The system can perform low impact writes with defined rollback and clear approvals, such as creating tickets, drafting emails, opening pull requests, or updating non critical records.\\
+Tier 3. Privileged actions. The system can perform high impact changes, such as modifying access controls, moving funds, changing production configuration, or deleting records.\\
+Tier 4. Cross system autonomy and multi agent delegation. The system coordinates across multiple services and delegates tasks among agents. Tier 4 increases blast radius through delegation and parallelism. Operational readiness at Tier 4 requires explicit delegation boundaries, a shared evidence chain across agents, and enforceable caps on cross system traversal and parallel tool execution. An agent may not delegate privileged actions unless the delegate inherits the same autonomy budget and approval artifacts.
+
+\subsection{Autonomy budget}
+An autonomy budget is a configurable set of caps that limits what an agent can do before escalation. Budgets should be tier specific and enforced by the control plane, not by prompts. The purpose of the autonomy budget is to bound blast radius when errors occur, including errors induced by ambiguity, prompt injection, memory poisoning, or tool misuse.
+
+Suggested starting caps are provided in Appendix A as calibration anchors. These values are not universal. They are starting anchors intended to prevent unbounded execution during early rollout.
+
+\subsection{Budget escalation rules}
+Budgets require deterministic escalation triggers. Approval is required when a plan includes any write action above defined thresholds. Lockdown mode is required when injection signals or anomalies occur, switching the agent to read only behavior while requesting human review. Human takeover is required when rollback is unavailable or when privileged actions are requested.
+
+\subsection{Deliverable}
+Appendix A provides an autonomy budget template that teams can adopt per tier.
+
+\section{Failure modes that matter in production}
+
+\subsection{Intent drift and scope mismatch}
+An agent can produce actions that are internally coherent yet misaligned with operator intent. This often occurs when the input request is underspecified, when target selection is inferred, or when a reasonable default is applied to a privileged scope. In practice, this failure mode is dangerous because the action can look correct in a quick skim while still targeting the wrong resources. The operational signature is a mismatch between the user\textquotesingle s stated intent and the concrete target set, change set, or impact surface.
+
+\subsection{Prompt injection through untrusted tool outputs}
+When tool outputs contain untrusted content, an agent may treat that content as instructions rather than data. The common carriers are web pages, tickets, emails, logs, and documents. This is not a hypothetical edge case. Recent incidents show prompt injection being used as an execution lever in agentic workflows and in supply chain adjacent scenarios. Operationally, this manifests as tool calls that were not part of the user\textquotesingle s request, or plan deviations that correlate with recently retrieved content.
+
+\subsection{Over-privilege and credential mis-scoping}
+If an agent is given broad API tokens or long lived credentials, it can perform actions that were never intended, especially when combined with injection or intent drift. The root cause is typically convenience, a lack of tiering, or a missing control plane that can mint least privilege, short lived tokens per action class. The operational signature is privilege overreach, where the agent uses capabilities it did not strictly need for the task.
+
+\subsection{Cascading actions and self-reinforcing context}
+Multi step execution can create a feedback loop. An initial mistake produces a state change, which becomes new context, which then justifies further actions. The blast radius expands even if each step looks locally rational. The operational signature is action sequences whose justification references the agent\textquotesingle s own prior actions rather than an external ticket, approval record, or validated intent.
+
+\subsection{Memory poisoning and durable state corruption}
+If the agent writes to durable memory, it can store incorrect or adversarial content that persists across sessions. This converts a single failure into a recurring failure pattern. The operational signature is repeated, stable misbehavior across tasks that share no legitimate common cause.
+
+\subsection{Approval fatigue and weak human gating}
+Human in the loop can degrade into human in the way when approvals become repetitive, poorly summarized, or decoupled from concrete diffs. In those conditions, approvals become a throughput mechanism rather than a control. Real incidents of AI-enabled fraud underscore that humans can be socially engineered even when they believe they are following procedure. The operational signature is high approval velocity with low review quality, and approvals occurring without target visibility, diff visibility, or rollback awareness.
+
+\section{Readiness scorecard}
+This section defines a minimum operational bar by capability tier. Readiness is assessed across six dimensions. The scorecard is intentionally deployable. It is designed to gate rollouts, not to decorate slide decks.
+
+\subsection{Dimensions}
+Authority control. Least privilege, short lived credentials, separation of duties for high impact changes.\\
+Intent verification. Structured plans, explicit target enumeration, confirmation gates tied to actions.\\
+Adversarial resilience. Isolation of untrusted content, injection defenses, memory hygiene.\\
+Observability. Audit events, traceability from request to action, replay support where feasible.\\
+Containment and recovery. Sandboxes, dry runs, rollback procedures, lockdown behavior.\\
+Human oversight. Escalation rules, review queues, and meaningful approvals.
+
+\subsection{Scorecard format (operator checklist)}
+Each dimension is assessed as Pass, Conditional, or Fail for the target capability tier. A tier is eligible only if all required dimensions meet the minimum bar.
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{1.25in}p{1.55in}p{0.85in}p{0.85in}p{0.85in}p{0.85in}}
+Dimension & Evidence artifact & Tier 1 minimum & Tier 2 minimum & Tier 3 minimum & Tier 4 minimum \\
+\hline
+Authority control & Credential scope record, token TTL, privilege mapping & Scoped read access & Scoped write access by action type & Least privilege per tool, per action, per resource; separation of duties & Same as Tier 3 plus delegation boundary enforcement \\
+\hline
+Intent verification & Approved plan, enumerated targets, diff summary & N/A & Required for all writes & Required per privileged action class & Required per delegate action and target set \\
+\hline
+Adversarial resilience & Isolation policy, injection tests, memory rules & Retrieval isolation & Isolation plus injection scenario tests & Isolation plus lockdown triggers wired to stop & Same as Tier 3 plus cross agent verification \\
+\hline
+Observability & Audit events, trace IDs, plan to action mapping & Retrieval audit & Full action audit for writes & Full action audit plus anomaly alerts & Evidence continuity across agents \\
+\hline
+Containment and recovery & Dry run evidence, rollback playbook, drills & N/A & Rollback required for every write & Rollback plus pre execution gates & Same as Tier 3 plus cross system traversal caps \\
+\hline
+Human oversight & Approval records, review queue & N/A & Meaningful approvals for writes & Meaningful approvals for privileged actions & Quorum or additional safeguards are additive only \\
+\hline
+\end{longtable}
+
+\subsection{Minimum bar per tier}
+Tier 1 requires isolation of retrieved content and auditability of retrieval sources. Tier 2 requires intent verification, evidence records, and tested rollback for every permitted write action. Tier 3 requires separation of duties, strict credential scoping, explicit approvals for each privileged action class, and continuous monitoring with lockdown triggers. Tier 4 requires all Tier 3 controls plus explicit delegation boundaries, cross system traversal caps, and evidence continuity across agents.
+
+\subsection{Pass or fail rules}
+If rollback does not exist for a write action, that action is not eligible for Tier 2 automation.\\
+If credentials cannot be scoped by tool, action type, and resource, Tier 3 is not eligible.\\
+If approvals do not expose targets and diffs, approvals are not controls and cannot be used to justify Tier 2 or Tier 3 readiness.\\
+If untrusted tool outputs can influence tool invocation parameters without isolation, Tier 2 and above is not eligible.
+
+\section{Control patterns that actually work}
+
+\subsection{Tool allowlisting and action schemas}
+Tool access must be explicit. Each tool must have an allowlisted set of action types. Each action type must have typed parameters and explicit validation. Freeform tool execution is incompatible with Tier 2 and above.
+
+Enforcement. Tool execution is mediated by a control plane that exposes only allowlisted tools and action types. Each action type has a schema that validates targets, parameters, and thresholds before execution. Schema validation failures are treated as hard stops. Tool calls carry a plan reference and an approval identifier when required.
+
+Limitations. Schemas do not prevent a harmful plan from being proposed. They prevent execution of out of scope actions. Schemas must be paired with intent verification, target enumeration, and rollback readiness. Schema updates should be treated as requalification events.
+
+\subsection{Planner executor separation}
+A planner executor split reduces the attack surface by isolating natural language planning from constrained execution. The planner can propose, but the executor should only accept schema valid actions within an autonomy budget. This pattern also improves audit quality because the plan becomes a first class artifact.
+
+Enforcement. The planner produces a structured plan with explicit targets and action types. The executor refuses tool calls unless they match the approved plan, match the schema, and remain within the autonomy budget. Executor behavior is deterministic with respect to policy checks.
+
+Limitations. Separation reduces the chance that untrusted content becomes executable actions, but does not eliminate injection into planning text. It must be paired with isolation of retrieved content and meaningful approvals for write actions.
+
+\subsection{Two channel confirmation for high impact changes}
+For destructive or irreversible actions, confirmation should be separated from the conversational channel. At minimum, the confirmation step must restate targets, summarize diffs, and bind to an approval identifier. This is a control against both intent drift and injection.
+
+Enforcement. The control plane generates a confirmation artifact that includes the enumerated target set, the action class, and a diff summary. The artifact is signed or otherwise bound to an approval identifier. Tool execution is blocked until the approval identifier is presented.
+
+Limitations. Confirmation is only as good as the diff visibility and the reviewer. Approval fatigue must be monitored. Confirmation should be paired with anomaly detection and rollback readiness.
+
+\subsection{Least privilege and short lived credentials}
+Credentials should be minted per task, scoped per tool and per action class, with short lifetimes. Tier 3 requires separation of duties for privileged actions, where the agent cannot both propose and execute without an external approval artifact.
+
+Enforcement. The control plane mints short lived tokens scoped to the specific tool, action type, and resource identifiers in the approved plan. Privileged credentials are issued only after required approvals and are invalid outside the plan context.
+
+Limitations. Least privilege reduces blast radius but does not prevent errors within scope. Token issuance logic becomes part of the trusted computing base and must be auditable.
+
+\subsection{Lockdown mode as a first class behavior}
+When anomaly signals trigger, the agent should default to read only behavior, stop tool execution, and request human review. Lockdown is not a user interface feature. It is an operational control that prevents cascading damage during suspected compromise.
+
+Enforcement. Anomaly signals are wired to enforced stop. The control plane blocks write-capable tools and forces the agent into read only behavior for the affected task. The stop condition is recorded in audit events.
+
+Limitations. Lockdown requires well chosen triggers. Overly sensitive triggers cause frequent halts; weak triggers allow damage. Triggers should be validated in the evaluation harness.
+
+\subsection{Evidence records for every write}
+Tier 2 and above requires a minimal evidence record tying together intent, enumerated targets, approvals, tool calls, and outcomes. This is necessary for accountability and post incident reconstruction. It also prevents untraceable automation from becoming normal practice.
+
+Enforcement. The control plane emits a per task evidence record ID and requires all tool calls to include it. Evidence records include plan reference, targets, approvals, tool I/O identifiers, outcomes, and rollback identifiers when available.
+
+Limitations. Evidence records do not prevent bad changes. They make bad changes discoverable and recoverable. Evidence completeness should be an acceptance gate.
+
+\subsection{Multi agent delegation controls (Tier 4)}
+Delegation must be explicit and constrained. Each delegated task must carry an immutable context bundle containing the approved plan reference, target constraints, applicable autonomy budget, and evidence record identifier. Delegates must be prevented from expanding scope beyond inherited constraints. Cross agent communication channels must treat all inbound messages as untrusted data unless signed by the control plane. For privileged actions, delegation requires separation of duties, with approvals bound to the specific delegate action type and target set.
+
+\subsubsection{Cross agent communication verification patterns}
+Cross agent messages must be treated as untrusted data unless verified by the control plane. The objective is to prevent a compromised agent, poisoned content, or external injection from causing other agents to accept instructions outside approved constraints.
+
+Message envelope. Each cross agent message includes a structured envelope with message identifier, sender identifier, recipient identifier, timestamp, expiration time, conversation or task identifier, approved plan reference, autonomy budget identifier, and a payload hash. The payload is structured data validated against schemas.
+
+Signature or token binding. The envelope is bound to an authenticity mechanism. Either the control plane issues a short lived signed token to the sender for a specific task identifier and recipient set, or the control plane signs the envelope and the recipient verifies the signature using a pinned control plane public key.
+
+Replay protection. Every envelope contains a nonce or monotonic sequence number. Recipients maintain a short lived replay cache keyed by sender and task identifier. Replays and expired envelopes are rejected.
+
+Scope binding. Recipients validate that incoming messages reference an existing approved plan and an applicable autonomy budget. If the message cannot be bound to an approval artifact, it is treated as untrusted context only and is not translated into tool calls or plan changes.
+
+Quorum gating for privileged actions. For delegated privileged actions, require either a human approval bound to the delegate\textquotesingle s action and target set, or a quorum rule such as two independent delegates agreeing on the same schema valid action proposal. Quorum is additive only and does not replace approvals at Tier 3.
+
+Independence requirement. Independence must be established operationally. Delegates must not share the same untrusted context source, the same durable memory, or the same planner output. At minimum, independence requires separate retrieval contexts and separate randomization seeds, plus a control plane rule that prevents one delegate from forwarding unverified context to another. Quorum is invalid if both delegates consumed the same untrusted document or ticket content without isolation.
+
+Failure behavior. If verification fails, the recipient enters lockdown mode for the affected task, refuses tool execution, and emits an audit event indicating rejection reason and envelope metadata.
+
+\section{Observability and audit}
+
+\subsection{Audit event requirements}
+Every tool invocation should emit an audit event containing timestamp, actor, tool identifier, action type, target identifiers, parameter hashes, approval identifier where applicable, outcome status, and rollback identifier when available. The audit record must be sufficient to reconstruct what changed, even if the model conversation is unavailable.
+
+\subsection{Alerts and anomaly signals}
+Action burst detection, novel targets, cross system hop growth, privilege escalation attempts, plan execution mismatch, and repeated failures are baseline signals. At Tier 3, these signals should be wired to lockdown triggers, not merely dashboards.
+
+\subsection{Post incident replay}
+Deterministic replay is not always possible, but post incident reconstruction should be. Logging of plans, tool I/O, and approval artifacts is the practical minimum.
+
+\section{Evaluation harness and metrics}
+
+\subsection{Harness design}
+A minimal harness should provide a sandbox environment with mock or constrained APIs for representative tools, plus a corpus of adversarial inputs such as poisoned tickets, malicious HTML, booby trapped logs, and injection-laced documents. Acceptance testing must be scenario based and tier specific.
+
+\subsection{Metrics}
+Unauthorized Action Rate (UAR). Define $A_{\mathrm{exec}}$ as the count of executed tool actions in a task window $W$. Define $A_{\mathrm{unauth}}$ as the count of executed tool actions in $W$ for which no valid approval artifact exists, or for which the action exceeded the approved scope.
+\[
+\mathrm{UAR} = \frac{A_{\mathrm{unauth}}}{\max(1, A_{\mathrm{exec}})}
+\]
+
+Injection Success Rate (ISR). Define $N_{\mathrm{inj}}$ as the number of injection scenarios executed. Define $N_{\mathrm{succ}}$ as the number of scenarios where the agent executed an out of scope action, attempted an out of scope action, or produced a plan containing out of scope actions due to injected instructions.
+\[
+\mathrm{ISR} = \frac{N_{\mathrm{succ}}}{\max(1, N_{\mathrm{inj}})}
+\]
+
+Time to Detect and Halt (TDH). Define $t_{0}$ as the timestamp of the first violation indicator and $t_{\mathrm{halt}}$ as the timestamp when tool execution is blocked and lockdown is enforced.
+\[
+\mathrm{TDH} = t_{\mathrm{halt}} - t_{0}
+\]
+
+Rollback Success Rate (RSR). Define $W_{\mathrm{attempt}}$ as the count of rollback attempts and $W_{\mathrm{success}}$ as the count of rollbacks that restore the target state and pass verification.
+\[
+\mathrm{RSR} = \frac{W_{\mathrm{success}}}{\max(1, W_{\mathrm{attempt}})}
+\]
+
+Blast Radius Score (BRS). Define a task window $W$ from first tool call to stop condition. Let $T$ be the number of unique target resources modified within $W$ and $S$ the number of unique external systems touched within $W$. Define weights $\alpha$ and $\beta$ by environment criticality (default $\alpha = 1$, $\beta = 5$ in production).
+\[
+\mathrm{BRS} = \alpha T + \beta S
+\]
+
+Privilege Overreach Index (POI). Define $P_{\mathrm{used}}$ as the set of distinct permission scopes actually exercised and $P_{\mathrm{req}}$ as the minimum permission scope set required to execute the approved plan.
+\[
+\mathrm{POI} = \frac{\left| P_{\mathrm{used}} \setminus P_{\mathrm{req}} \right|}{\max\left(1,\left|P_{\mathrm{req}}\right|\right)}
+\]
+
+\subsection{Acceptance criteria}
+Tier 2 eligibility requires stable rollback success and low unauthorized action rate under ambiguous and adversarial scenarios. Tier 3 eligibility requires strong privilege scoping and demonstrably effective lockdown triggers under injection scenarios.
+
+\section{Rollout ladder}
+
+\subsection{Sandbox mode}
+Entry criteria. Harness environment available, audit events emitted for every tool call, rollback drills defined for every write action under consideration.\\
+Exit criteria. RSR meets target threshold in drills, UAR is near zero under nominal scenarios, ISR is measured and trending down under injection scenarios.\\
+Authority to advance. Platform owner and security owner sign off.\\
+Regression trigger. Any unbounded write path discovered, or rollback unavailable for a permitted write.
+
+\subsection{Shadow mode}
+Entry criteria. Sandbox exit criteria met. Shadow execution can be run on representative tasks without production writes.\\
+Exit criteria. Intent drift rate is measured and decreasing, target enumeration is stable, TDH is within threshold under simulated anomaly triggers.\\
+Authority to advance. Service owner approves; security owner confirms injection controls are active.\\
+Regression trigger. Plan to execution mismatch without detection, or recurring scope mismatch patterns.
+
+\subsection{Assisted write mode}
+Entry criteria. Shadow mode exit criteria met. Autonomy budget enforced by control plane. Evidence records generated for every write.\\
+Exit criteria. UAR remains below threshold across a defined sample of tasks. RSR remains above threshold. BRS remains bounded and stable.\\
+Authority to advance. Change advisory owner or equivalent approver group.\\
+Regression trigger. Any unauthorized write, privilege overreach event, or failure to halt on anomaly.
+
+\subsection{Bounded autonomy}
+Entry criteria. Assisted write metrics stable, anomaly alerts wired to enforced stop, periodic requalification schedule established.\\
+Exit criteria. Stable metrics across release cycles, sustained low ISR in harness, POI at or near zero.\\
+Authority to advance. Joint approval by platform, service owner, and security owner.\\
+Regression trigger. Metric regression beyond thresholds, new tool integrations without requalification, or rising BRS.
+
+\subsection{Privileged autonomy}
+Entry criteria. Separation of duties enforced, privileged approvals bound to action class and target set, credentials scoped per resource, lockdown verified under adversarial scenarios.\\
+Exit criteria. Demonstrated stable operation over time with near zero UAR, low ISR, bounded BRS, near zero POI, and acceptable TDH.\\
+Authority to advance. Security owner plus executive change authority or equivalent high assurance gate.\\
+Regression trigger. Any privileged action executed without required approval artifacts or outside scoped credentials.
+
+\section{Real world anchors}
+
+\subsection{GitLab database outage and rollback reality}
+GitLab\textquotesingle s 2017 incident shows how a single mistaken destructive action can cause major data loss and how recovery depends on tested backups and practiced procedures, not on good intentions. Control implication. Tier 2 requires tested rollback for every permitted write action. Tier 3 requires additional separation of duties and pre-execution safety gates. Metric linkage. Rollback Success Rate, Time to Detect and Halt.
+
+\subsection{Deepfake enabled fraud and approval weakness}
+Arup\textquotesingle s disclosed deepfake scam demonstrates that human approval is not automatically a safety control. Humans can be socially engineered into authorizing transfers in workflows that appear legitimate. Control implication. Approvals must be tied to concrete diffs, target visibility, and policy thresholds. High impact actions require multi factor verification beyond a single conversational confirmation. Metric linkage. Unauthorized Action Rate, approval quality measures, anomaly detection time.
+
+\subsection{Agentic prompt injection and tool chain compromise}
+Reports in early 2026 describe prompt injection being used to drive unauthorized installation or execution behaviors in agent-adjacent workflows, including supply chain style abuse patterns. Control implication. Untrusted content must be isolated from instruction channels. Tool execution must be schema constrained and governed by enforceable budgets, with lockdown behavior triggered by anomalies. Metric linkage. Injection Success Rate, Blast Radius Score, Time to Detect and Halt.
+
+\section{Conclusion}
+Agentic AI is a deployment shape that turns model outputs into state changes. That shift requires a readiness discipline grounded in enforceable controls, auditability, and recovery. A practical readiness model consists of capability tiers, autonomy budgets, measurable scorecards, adversarial evaluation harnesses, and a phased rollout ladder. Teams can adopt agents safely in bounded domains when they treat autonomy as a privilege earned through controls and measurement rather than as a default entitlement of model capability.
+
+\appendix
+
+\section{Autonomy budget template}
+% Appendix A
+
+\subsection{Purpose}
+This template defines enforceable caps for tool using agents. Budgets are tier specific and must be enforced by the control plane, not by prompts. Budgets exist to bound blast radius when ambiguity, injection, or tool misuse occurs.
+
+\subsection{Budget Record}
+\begin{longtable}{>{\raggedright\arraybackslash}p{2.2in}p{3.8in}}
+Budget ID & \\ \hline
+Owner & \\ \hline
+Environment (sandbox / staging / production) & \\ \hline
+Capability Tier (0 / 1 / 2 / 3 / 4) & \\ \hline
+Effective Date & \\ \hline
+Review Cadence (weekly / monthly / quarterly) & \\ \hline
+Emergency Contact & \\ \hline
+\end{longtable}
+
+\subsection{Global Execution Caps}
+\begin{longtable}{>{\raggedright\arraybackslash}p{2.8in}p{3.2in}}
+Max runtime per task (seconds) & \\ \hline
+Max tool calls per task & \\ \hline
+Max concurrent tool calls & \\ \hline
+Max unique systems touched per task & \\ \hline
+Max unique target resources per task & \\ \hline
+\end{longtable}
+
+\subsection{Write and Privilege Caps}
+\begin{longtable}{>{\raggedright\arraybackslash}p{2.8in}p{3.2in}}
+Max write actions per task & \\ \hline
+Max privileged actions per session & \\ \hline
+Max irreversible actions per session & 0 (default) \\ \hline
+Max delete operations per task & \\ \hline
+Max permission changes per task & \\ \hline
+Max spend per task (currency) & \\ \hline
+Max external data exports per task (records or bytes) & \\ \hline
+\end{longtable}
+
+\subsection{Credential Constraints}
+\begin{longtable}{>{\raggedright\arraybackslash}p{2.8in}p{3.2in}}
+Credential lifetime (minutes) & \\ \hline
+Credential scope granularity (per tool / per action type / per resource) & \\ \hline
+Privileged credentials allowed (yes / no) & \\ \hline
+Separation of duties required for privileged actions (yes / no) & \\ \hline
+\end{longtable}
+
+\subsection{Escalation Triggers}
+Approval required when: (1) Any write action is proposed above threshold. (2) Any privileged action is proposed. (3) Any cap in Global Execution Caps or Write and Privilege Caps would be exceeded.
+
+Lockdown triggers when: (1) Untrusted content is detected in the instruction channel. (2) Plan execution deviates from the approved plan. (3) Novel targets exceed baseline. (4) Repeated tool failures exceed threshold.
+
+Human takeover required when: (1) Rollback is unavailable for any proposed write. (2) Privileged actions are requested. (3) Injection indicators are present.
+
+\subsection{Evidence Requirements (Tier 2+)}
+Every write action must produce an evidence record containing intent reference, enumerated targets, approvals, tool calls, outcomes, and rollback identifier when available.
+
+\subsection{Suggested starting values (non normative)}
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.7in}p{1.25in}p{1.35in}p{1.55in}p{1.35in}p{1.05in}}
+Tier & Max tool calls per task & Max write actions per task & Max privileged actions per session & Max unique systems per task & Max irreversible actions \\
+\hline
+1 & 20 & 0 & 0 & 2 & 0 \\
+\hline
+2 & 30 & 10 & 0 & 2 & 0 \\
+\hline
+3 & 40 & 20 & 2 & 3 & 0 \\
+\hline
+4 & 60 & 30 & 2 & 4 & 0 \\
+\hline
+\end{longtable}
+
+\section{Failure mode to control mapping}
+% Appendix B placeholder
+
+\section{Readiness scorecard checklist}
+% Appendix C placeholder
+
+\section{Example action schemas and evidence record format}
+% Appendix D placeholder
+
+\section{Audit event schema examples}
+% Appendix E placeholder
+
+\section{Evaluation scenario suite}
+% Appendix F placeholder
+
+\section{Rollout checklists}
+% Appendix G placeholder
+
+\section{Related work and references}
+% Appendix H
+
+This appendix lists public references used as anchors for verifiable incidents and background context, and includes the author\textquotesingle s related work on enforceable intent checks.
+
+\begin{thebibliography}{9}
+
+\bibitem{gitlab2017}
+GitLab, ``Postmortem of database outage of January 31,'' 2017. [Online]. Available: \url{https://about.gitlab.com/blog/postmortem-of-database-outage-of-january-31/}. [Accessed: Mar. 17, 2026].
+
+\bibitem{arup2024}
+The Guardian, ``Arup lost \$25m in Hong Kong deepfake video conference scam,'' May 17, 2024. [Online]. Available: \url{https://www.theguardian.com/technology/article/2024/may/17/uk-engineering-arup-deepfake-scam-hong-kong-ai-video}. [Accessed: Mar. 17, 2026].
+
+\bibitem{cline2026}
+The Verge, ``The AI security nightmare is here and it looks suspiciously like lobster,'' 2026. [Online]. Available: \url{https://www.theverge.com/ai-artificial-intelligence/881574/cline-openclaw-prompt-injection-hack}. [Accessed: Mar. 17, 2026].
+
+\bibitem{safeRFC}
+R. S. J. Corral, ``SAFE Intent Framework (RFC-style draft),'' 2026. [Online]. Available: \url{https://doi.org/10.5281/zenodo.18896883}. [Accessed: Mar. 17, 2026].
+
+\end{thebibliography}
+
+\end{document}
