@@ -3,6 +3,17 @@
 This document tracks substantive changes to the paper and its operational artifacts.
 Minor copy edits and formatting changes are not listed.
 
+## Rev v0.6 (2026-03-17)
+- Added Section 7.2 (Audit field completeness as an acceptance gate), distinguishing required audit fields (minimum for post-incident reconstruction without the model conversation) from optional fields, and treating missing required fields as a blocking scorecard finding equivalent to a failed pass/fail rule in Section 5.4.
+- Added Section 7.3 (Alerts and anomaly signals) with per-signal descriptions and explicit lockdown-trigger tier assignments for each baseline signal. Separated approval fatigue indicators as a human oversight review queue signal rather than an automatic lockdown trigger, closing the loop between Section 4.6 and the Arup anchor in Section 10.2.
+- Updated Section 7.4 (Post incident replay, formerly 7.3) to specify that plans must be logged at proposal time, tool I/O at invocation time, and approval artifacts retained for the duration of the evidence retention policy.
+- Added Section 7.5 (Audit retention and access controls) covering the threat of an agent suppressing its own audit trail, with access control requirements restricting write access to the control plane, prohibiting agent runtime modification of emitted events, requiring separate approval to delete or amend privileged action audit events, and mandating a central audit store at Tier 4 that no individual delegate can modify.
+- Added Section 8.3 (Suggested threshold anchors, non normative) with a table of starting values for all six metrics (UAR, ISR, TDH, RSR, BRS, POI) across all four tiers, plus per-metric notes clarifying what each threshold means operationally. Former Section 8.3 (Acceptance criteria) renumbered to 8.4 with a cross-reference to the new table.
+- Updated Section 9.5 (Privileged autonomy) exit criteria to reference the Section 8.3 threshold anchors explicitly.
+- Added Section 9.6 (Delegated autonomy, Tier 4) as a distinct qualification gate that must not begin until all Privileged Autonomy exit criteria are met. Includes entry criteria covering delegation boundary enforcement, immutable context bundle verification, cross-agent message verification, and per-delegate autonomy budget enforcement; exit criteria covering Tier 4 metric thresholds, cross-agent evidence continuity, and quorum independence verification; an authority-to-advance gate requiring all four approvers (platform, service, security, executive); and regression triggers covering delegate budget overrun, unverified cross-agent messages, undocumented privileged delegation, evidence continuity gaps, and shared-context quorum acceptance.
+- Updated Section 11 (Conclusion) to reference the new Delegated Autonomy phase and the qualification gate rationale.
+- Bumped version to v0.6 in title block of both LaTeX and Markdown sources.
+
 ## Rev v0.5 (2026-03-17)
 - Aligned the Markdown paper with the LaTeX source to ensure content parity for PDF builds.
 - Converted web references to IEEE-style entries including [Online] and [Accessed] fields, and standardized URL handling.
