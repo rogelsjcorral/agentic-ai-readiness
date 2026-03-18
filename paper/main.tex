@@ -1,4 +1,4 @@
-% agentic-ai-readiness-v0.5.tex (refined)
+% agentic-ai-readiness-v0.6.tex (refined)
 \documentclass[11pt]{article}
 
 % Page and typography
@@ -38,7 +38,7 @@
 \title{Operational Readiness Criteria for Tool-Using LLM Agents\\
 \large Controls, Metrics, and Rollout Gates for Delegated Autonomy}
 \author{Rogel S.J. Corral\\Independent Researcher}
-\date{Draft v0.5\\Status: For Community Review\\Date: 2026-03-17}
+\date{Draft v0.6\\Status: For Community Review\\Date: 2026-03-17}
 
 \begin{document}
 \maketitle
@@ -69,14 +69,22 @@ This document is an operations focused guide for teams deploying tool using agen
 
 \subsection{Definitions}
 Agent. An LLM driven system that can plan and execute actions via tools across multiple steps, with some persistent state in the form of session state or durable memory, under delegated authority.\\
-Tool. A callable interface that can read from or write to an external system, including an API, database, file store, SaaS application, or internal service.\\
-Action. A tool invocation that creates observable effects in an external system.\\
-Write action. An action that creates, modifies, deletes, transfers, publishes, grants access, revokes access, or otherwise changes state.\\
-Privileged action. A write action with high impact, such as changing identity and access controls, moving money, modifying production infrastructure, deleting records, or altering audit logs.\\
-Approval. A human confirmation step that authorizes a proposed action plan or a specific action, tied to an auditable approval identifier.\\
-Evidence record. A minimal artifact set that explains why an action was taken, what inputs were used, what was approved, and what outcome occurred.\\
-Rollback. A defined method to revert a write action, including a tested procedure and known failure conditions.\\
-Session state. Short lived working context used during a single run.\\
+Tool. A callable interface that can read from or write to an external system, including an API, database, file store, SaaS application, or internal service.
+
+Action. A tool invocation that creates observable effects in an external system.
+
+Write action. An action that creates, modifies, deletes, transfers, publishes, grants access, revokes access, or otherwise changes state.
+
+Privileged action. A write action with high impact, such as changing identity and access controls, moving money, modifying production infrastructure, deleting records, or altering audit logs.
+
+Approval. A human confirmation step that authorizes a proposed action plan or a specific action, tied to an auditable approval identifier.
+
+Evidence record. A minimal artifact set that explains why an action was taken, what inputs were used, what was approved, and what outcome occurred.
+
+Rollback. A defined method to revert a write action, including a tested procedure and known failure conditions.
+
+Session state. Short lived working context used during a single run.
+
 Durable memory. State that persists across sessions, such as notes, profiles, preferences, cached facts, or stored plans.
 
 \subsection{Agent shapes in scope}
@@ -105,10 +113,14 @@ Autonomy must be earned by controls and measurement, not assumed from model capa
 \section{Capability tiers and the autonomy budget}
 
 \subsection{Capability tiers}
-Tier 0. No tools, advice only. The system provides guidance with no external effects.\\
-Tier 1. Read only tools. The system can retrieve information, such as search or knowledge base lookup, but cannot write or change state.\\
-Tier 2. Write tools in bounded systems. The system can perform low impact writes with defined rollback and clear approvals, such as creating tickets, drafting emails, opening pull requests, or updating non critical records.\\
-Tier 3. Privileged actions. The system can perform high impact changes, such as modifying access controls, moving funds, changing production configuration, or deleting records.\\
+Tier 0. No tools, advice only. The system provides guidance with no external effects.
+
+Tier 1. Read only tools. The system can retrieve information, such as search or knowledge base lookup, but cannot write or change state.
+
+Tier 2. Write tools in bounded systems. The system can perform low impact writes with defined rollback and clear approvals, such as creating tickets, drafting emails, opening pull requests, or updating non critical records.
+
+Tier 3. Privileged actions. The system can perform high impact changes, such as modifying access controls, moving funds, changing production configuration, or deleting records.
+
 Tier 4. Cross system autonomy and multi agent delegation. The system coordinates across multiple services and delegates tasks among agents. Tier 4 increases blast radius through delegation and parallelism. Operational readiness at Tier 4 requires explicit delegation boundaries, a shared evidence chain across agents, and enforceable caps on cross system traversal and parallel tool execution. An agent may not delegate privileged actions unless the delegate inherits the same autonomy budget and approval artifacts.
 
 \subsection{Autonomy budget}
@@ -252,13 +264,45 @@ Failure behavior. If verification fails, the recipient enters lockdown mode for 
 \section{Observability and audit}
 
 \subsection{Audit event requirements}
-Every tool invocation should emit an audit event containing timestamp, actor, tool identifier, action type, target identifiers, parameter hashes, approval identifier where applicable, outcome status, and rollback identifier when available. The audit record must be sufficient to reconstruct what changed, even if the model conversation is unavailable.
+Every tool invocation should emit an audit event. The audit record must be sufficient to reconstruct what changed, even if the model conversation is unavailable.
+
+Required fields for every audit event: timestamp (UTC, millisecond resolution), actor identifier (agent instance and session), tool identifier, action type, target resource identifiers, parameter hashes (not raw parameter values), outcome status (success, failure, blocked, rolled back), and evidence record identifier for Tier 2 and above.
+
+Optional but strongly recommended fields: plan reference identifier, approval identifier, rollback identifier, parent task or orchestration identifier for Tier 4, anomaly signal flags triggered during execution, and latency from plan proposal to execution.
+
+The distinction between required and optional is operational: required fields are the minimum needed for post incident reconstruction without access to the model conversation. Optional fields increase the fidelity of reconstruction and are required to compute TDH, POI, and cross agent evidence continuity at Tier 4.
+
+\subsection{Audit field completeness as an acceptance gate}
+Audit completeness is not a best effort property. At Tier 2 and above, evidence record identifier must be present on every write action audit event. At Tier 3, approval identifier must be present on every privileged action audit event. At Tier 4, parent task identifier and plan reference must be present to support cross agent evidence continuity.
+
+Missing required fields should be treated as a blocking finding in the rollout scorecard, equivalent to a failed pass/fail rule in Section~5.4. Teams should instrument an audit completeness check that runs continuously and alerts when required fields are absent.
 
 \subsection{Alerts and anomaly signals}
-Action burst detection, novel targets, cross system hop growth, privilege escalation attempts, plan execution mismatch, and repeated failures are baseline signals. At Tier 3, these signals should be wired to lockdown triggers, not merely dashboards.
+The following are baseline anomaly signals that should be instrumented before Tier 2 rollout. At Tier 3, every signal marked as lockdown trigger must be wired to enforced stop, not merely a dashboard alert.
+
+Action burst: tool call rate exceeds the autonomy budget cap within a task window. Lockdown trigger at Tier 3.
+
+Novel targets: action targets resources outside the approved plan's enumerated target set. Lockdown trigger at Tier 3 and 4.
+
+Cross system hop growth: the count of unique external systems touched within a task window increases beyond the budget cap. Lockdown trigger at Tier 3 and 4.
+
+Privilege escalation attempt: a tool call requests a permission scope not present in the minted credential set. Lockdown trigger at all tiers above 1.
+
+Plan execution mismatch: executed tool calls deviate from the approved plan in action type, target, or parameter hash. Lockdown trigger at Tier 2 and above.
+
+Repeated tool failures: consecutive failures on the same tool exceed a threshold, indicating possible injection or state corruption. Lockdown trigger at Tier 2 and above.
+
+Approval fatigue indicators: median approval review time drops below a threshold, or approval reversal rate falls to near zero across a review window. These are signals of degraded human oversight quality, not injection, and should route to a human oversight review queue rather than automatic lockdown.
+
+The approval fatigue signals require instrumentation beyond the audit event stream. Teams should track per-reviewer median time from approval presentation to confirmation, and track the rate at which approved plans are later reversed or escalated. A sudden drop in review time or a sustained period of zero reversals in a high volume approval queue are operational signatures of approval fatigue as described in Section~4.6.
 
 \subsection{Post incident replay}
-Deterministic replay is not always possible, but post incident reconstruction should be. Logging of plans, tool I/O, and approval artifacts is the practical minimum.
+Deterministic replay is not always possible, but post incident reconstruction should be. The practical minimum is: plans logged at proposal time, tool I/O logged at invocation time, and approval artifacts retained for the duration of the evidence retention policy.
+
+\subsection{Audit retention and access controls}
+Audit events and evidence records are themselves a high value target. An agent with write access to its own audit log can suppress evidence of its actions. Access control requirements for audit storage: write access to audit events must be restricted to the control plane, not to the agent runtime; the agent runtime must be unable to modify or delete audit events it has emitted; privileged action audit events must require a separate approval to delete or amend; and at Tier 4, audit events from delegate agents must be forwarded to a central audit store that no individual delegate can modify.
+
+Retention period is environment specific, but audit events for privileged actions should be retained for no less than the organization's incident response window, plus the time required for any regulatory reporting obligation. Evidence records for completed tasks should be retained for the same period.
 
 \section{Evaluation harness and metrics}
 
@@ -296,15 +340,39 @@ Privilege Overreach Index (POI). Define $P_{\mathrm{used}}$ as the set of distin
 \mathrm{POI} = \frac{\left| P_{\mathrm{used}} \setminus P_{\mathrm{req}} \right|}{\max\left(1,\left|P_{\mathrm{req}}\right|\right)}
 \]
 
+\subsection{Suggested threshold anchors (non normative)}
+Metric definitions are necessary but not sufficient to gate rollouts. Teams need starting threshold values to calibrate the evaluation harness and to make pass/fail determinations concrete. The values below are non normative anchors. They are intended as starting points for sandbox and shadow mode calibration, not as universal production requirements. Teams should tighten these values as operational experience accumulates and should document any deviations from these anchors with a rationale.
+
+% 7 cols: threshold anchor table. Widths chosen to fit within 6.5in textwidth with tabcolsep overhead.
+% 0.5+0.75+0.8+0.8+0.75+0.75+0.75 = 5.1in content (safe)
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.5in}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{0.8in}>{\raggedright\arraybackslash}p{0.8in}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{0.75in}}
+\textbf{Tier} & \textbf{UAR target} & \textbf{ISR target} & \textbf{TDH target} & \textbf{RSR target} & \textbf{BRS cap} & \textbf{POI target} \\
+\hline
+\endhead
+1 & N/A & $\leq 5\%$ & $\leq 60$s & N/A & $\leq 2$ & N/A \\
+\hline
+2 & $\leq 1\%$ & $\leq 10\%$ & $\leq 30$s & $\geq 95\%$ & $\leq 5$ & $\leq 5\%$ \\
+\hline
+3 & $\leq 0.1\%$ & $\leq 5\%$ & $\leq 15$s & $\geq 99\%$ & $\leq 8$ & $\leq 1\%$ \\
+\hline
+4 & $\leq 0.1\%$ & $\leq 5\%$ & $\leq 15$s & $\geq 99\%$ & $\leq 10$ & $\leq 1\%$ \\
+\hline
+\end{longtable}
+
+Notes on these anchors. UAR of zero is the long term target; the values above represent the maximum tolerated rate during a defined evaluation window, not an acceptable steady state. ISR is measured against the harness scenario corpus defined in Appendix F; a team with a small or undiversified scenario corpus should treat its ISR as a lower bound on real world exposure. TDH is measured from the first anomaly indicator to enforced lockdown; it is infrastructure latency, not human response time. RSR below the target threshold means Tier 2 or above is not eligible for that write action class until the rollback procedure is repaired and retested. BRS cap is a per task ceiling; tasks that routinely approach the cap should trigger a review of scope design rather than a cap increase. POI at or near zero is the expected steady state once least privilege credential issuance is working correctly; persistent POI above target indicates a credential scoping defect.
+
 \subsection{Acceptance criteria}
-Tier 2 eligibility requires stable rollback success and low unauthorized action rate under ambiguous and adversarial scenarios. Tier 3 eligibility requires strong privilege scoping and demonstrably effective lockdown triggers under injection scenarios.
+Tier 2 eligibility requires stable rollback success and low unauthorized action rate under ambiguous and adversarial scenarios. Tier 3 eligibility requires strong privilege scoping and demonstrably effective lockdown triggers under injection scenarios. Teams should use the threshold anchors in Section~8.3 as the concrete numerical bar for these determinations.
 
 \section{Rollout ladder}
 
 \subsection{Sandbox mode}
-Entry criteria. Harness environment available, audit events emitted for every tool call, rollback drills defined for every write action under consideration.\\
-Exit criteria. RSR meets target threshold in drills, UAR is near zero under nominal scenarios, ISR is measured and trending down under injection scenarios.\\
-Authority to advance. Platform owner and security owner sign off.\\
+Entry criteria. Harness environment available, audit events emitted for every tool call, rollback drills defined for every write action under consideration.
+
+Exit criteria. RSR meets target threshold in drills, UAR is near zero under nominal scenarios, ISR is measured and trending down under injection scenarios.
+
+Authority to advance. Platform owner and security owner sign off.
+
 Regression trigger. Any unbounded write path discovered, or rollback unavailable for a permitted write.
 
 \subsection{Shadow mode}
@@ -314,22 +382,41 @@ Authority to advance. Service owner approves; security owner confirms injection 
 Regression trigger. Plan to execution mismatch without detection, or recurring scope mismatch patterns.
 
 \subsection{Assisted write mode}
-Entry criteria. Shadow mode exit criteria met. Autonomy budget enforced by control plane. Evidence records generated for every write.\\
-Exit criteria. UAR remains below threshold across a defined sample of tasks. RSR remains above threshold. BRS remains bounded and stable.\\
-Authority to advance. Change advisory owner or equivalent approver group.\\
+Entry criteria. Shadow mode exit criteria met. Autonomy budget enforced by control plane. Evidence records generated for every write.
+
+Exit criteria. UAR remains below threshold across a defined sample of tasks. RSR remains above threshold. BRS remains bounded and stable.
+
+Authority to advance. Change advisory owner or equivalent approver group.
+
 Regression trigger. Any unauthorized write, privilege overreach event, or failure to halt on anomaly.
 
 \subsection{Bounded autonomy}
-Entry criteria. Assisted write metrics stable, anomaly alerts wired to enforced stop, periodic requalification schedule established.\\
-Exit criteria. Stable metrics across release cycles, sustained low ISR in harness, POI at or near zero.\\
-Authority to advance. Joint approval by platform, service owner, and security owner.\\
+Entry criteria. Assisted write metrics stable, anomaly alerts wired to enforced stop, periodic requalification schedule established.
+
+Exit criteria. Stable metrics across release cycles, sustained low ISR in harness, POI at or near zero.
+
+Authority to advance. Joint approval by platform, service owner, and security owner.
+
 Regression trigger. Metric regression beyond thresholds, new tool integrations without requalification, or rising BRS.
 
 \subsection{Privileged autonomy}
 Entry criteria. Separation of duties enforced, privileged approvals bound to action class and target set, credentials scoped per resource, lockdown verified under adversarial scenarios.\\
-Exit criteria. Demonstrated stable operation over time with near zero UAR, low ISR, bounded BRS, near zero POI, and acceptable TDH.\\
-Authority to advance. Security owner plus executive change authority or equivalent high assurance gate.\\
+Exit criteria. Demonstrated stable operation over time with near zero UAR, low ISR, bounded BRS, near zero POI, and acceptable TDH against the threshold anchors in Section~8.3.
+
+Authority to advance. Security owner plus executive change authority or equivalent high assurance gate.
+
 Regression trigger. Any privileged action executed without required approval artifacts or outside scoped credentials.
+
+\subsection{Delegated autonomy (Tier 4)}
+This phase covers agents that coordinate across multiple services or delegate tasks to other agents. Tier 4 deployment must not begin until all Privileged Autonomy exit criteria are met and the additional controls in Section~6.7 are verified in the harness environment. Tier 4 is not a continuation of the Privileged Autonomy phase; it is a separate qualification gate with distinct entry criteria and its own regression triggers.
+
+Entry criteria. All Privileged Autonomy exit criteria met. Delegation boundaries defined and enforced by the control plane. Immutable context bundle implemented and verified. Cross agent message verification patterns from Section~6.7.1 implemented and passing harness tests. Evidence continuity across agents confirmed: audit events from delegate agents are forwarded to central audit store and parent task identifiers are present. Autonomy budget enforced per delegate, with each delegate's budget not exceeding the parent agent's remaining budget at time of delegation.
+
+Exit criteria. UAR and ISR at or below Tier 4 threshold anchors across a defined multi-agent scenario set. TDH within threshold under cross agent injection scenarios. BRS within Tier 4 cap under parallel delegation scenarios. Cross agent evidence continuity confirmed across all delegate action audit events. Quorum independence requirement verified: harness confirms that quorum scenarios fail when both delegates share the same untrusted context source. Approval fatigue indicators within acceptable range under sustained delegation load.
+
+Authority to advance. Joint approval by platform owner, service owner, security owner, and executive change authority. This gate requires all four approvers because Tier 4 adds blast radius through delegation and parallelism that no single owner can fully assess.
+
+Regression trigger. Any delegate agent executing outside its inherited autonomy budget, any cross agent message accepted without control plane verification, any privileged action delegated without an approval artifact bound to the delegate action and target set, evidence continuity gap discovered in post incident review, or quorum accepted when delegates shared an untrusted context source.
 
 \section{Real world anchors}
 
@@ -343,7 +430,7 @@ Arup\textquotesingle s disclosed deepfake scam demonstrates that human approval 
 Reports in early 2026 describe prompt injection being used to drive unauthorized installation or execution behaviors in agent-adjacent workflows, including supply chain style abuse patterns. Control implication. Untrusted content must be isolated from instruction channels. Tool execution must be schema constrained and governed by enforceable budgets, with lockdown behavior triggered by anomalies. Metric linkage. Injection Success Rate, Blast Radius Score, Time to Detect and Halt.
 
 \section{Conclusion}
-Agentic AI is a deployment shape that turns model outputs into state changes. That shift requires a readiness discipline grounded in enforceable controls, auditability, and recovery. A practical readiness model consists of capability tiers, autonomy budgets, measurable scorecards, adversarial evaluation harnesses, and a phased rollout ladder. Teams can adopt agents safely in bounded domains when they treat autonomy as a privilege earned through controls and measurement rather than as a default entitlement of model capability.
+Agentic AI is a deployment shape that turns model outputs into state changes. That shift requires a readiness discipline grounded in enforceable controls, auditability, and recovery. A practical readiness model consists of capability tiers, autonomy budgets, measurable scorecards, adversarial evaluation harnesses, and a phased rollout ladder. The rollout ladder now includes a dedicated Delegated Autonomy phase for Tier 4 deployments, reflecting that multi agent coordination introduces blast radius through delegation that requires its own qualification gate. Teams can adopt agents safely in bounded domains when they treat autonomy as a privilege earned through controls and measurement rather than as a default entitlement of model capability.
 
 \appendix
 
