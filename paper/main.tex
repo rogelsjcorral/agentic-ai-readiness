@@ -1,21 +1,39 @@
-% agentic-ai-readiness-v0.3.tex (refined)
+% agentic-ai-readiness-v0.5.tex (refined)
 \documentclass[11pt]{article}
 
 % Page and typography
 \usepackage[margin=1in]{geometry}
-\usepackage{newtxtext,newtxmath} % Times-like text and math
+\usepackage{mathptmx} % Times-like text and math
 \usepackage[T1]{fontenc}
 
 % Tables and layout
 \usepackage{array}
 \usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{booktabs}
 
 % Links
-\usepackage[hidelinks]{hyperref}
-\usepackage{url}
+\usepackage{hyperref}
+\usepackage{xurl}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  urlcolor=blue,
+  citecolor=blue,
+  breaklinks=true,
+  pdfauthor={Rogel S.J. Corral},
+  pdftitle={Operational Readiness Criteria for Tool-Using LLM Agents},
+  pdfsubject={cs.SE},
+  pdfkeywords={LLM, agentic AI, tool-using agents, autonomy budget, prompt injection, blast radius, privilege overreach, rollback, audit, delegated autonomy},
+  pdfcreator={Rogel S.J. Corral}
+}
 
 % Symbols
 \usepackage{amssymb}
+
+% Allow URLs to break at more characters to prevent overflow
+\def\UrlBreaks{\do\/\do-\do.\do=\do_\do?\do\&\do\#}
 
 \title{Operational Readiness Criteria for Tool-Using LLM Agents\\
 \large Controls, Metrics, and Rollout Gates for Delegated Autonomy}
@@ -138,9 +156,12 @@ Human oversight. Escalation rules, review queues, and meaningful approvals.
 \subsection{Scorecard format (operator checklist)}
 Each dimension is assessed as Pass, Conditional, or Fail for the target capability tier. A tier is eligible only if all required dimensions meet the minimum bar.
 
-\begin{longtable}{>{\raggedright\arraybackslash}p{1.25in}p{1.55in}p{0.85in}p{0.85in}p{0.85in}p{0.85in}}
-Dimension & Evidence artifact & Tier 1 minimum & Tier 2 minimum & Tier 3 minimum & Tier 4 minimum \\
+% 6 cols: tabcolsep adds ~1in total overhead; content width ~5.5in available
+% Widths: 1.0+1.2+0.76+0.76+0.76+0.76 = 5.24in (safe)
+\begin{longtable}{>{\raggedright\arraybackslash}p{1.0in}>{\raggedright\arraybackslash}p{1.2in}>{\raggedright\arraybackslash}p{0.76in}>{\raggedright\arraybackslash}p{0.76in}>{\raggedright\arraybackslash}p{0.76in}>{\raggedright\arraybackslash}p{0.76in}}
+\textbf{Dimension} & \textbf{Evidence artifact} & \textbf{Tier 1 minimum} & \textbf{Tier 2 minimum} & \textbf{Tier 3 minimum} & \textbf{Tier 4 minimum} \\
 \hline
+\endhead
 Authority control & Credential scope record, token TTL, privilege mapping & Scoped read access & Scoped write access by action type & Least privilege per tool, per action, per resource; separation of duties & Same as Tier 3 plus delegation boundary enforcement \\
 \hline
 Intent verification & Approved plan, enumerated targets, diff summary & N/A & Required for all writes & Required per privileged action class & Required per delegate action and target set \\
@@ -333,7 +354,9 @@ Agentic AI is a deployment shape that turns model outputs into state changes. Th
 This template defines enforceable caps for tool using agents. Budgets are tier specific and must be enforced by the control plane, not by prompts. Budgets exist to bound blast radius when ambiguity, injection, or tool misuse occurs.
 
 \subsection{Budget Record}
-\begin{longtable}{>{\raggedright\arraybackslash}p{2.2in}p{3.8in}}
+% Fixed: reduced column widths to fit within textwidth (6.5in)
+% 2.0in + 4.0in = 6.0in (safe)
+\begin{longtable}{>{\raggedright\arraybackslash}p{2.0in}p{4.0in}}
 Budget ID & \\ \hline
 Owner & \\ \hline
 Environment (sandbox / staging / production) & \\ \hline
@@ -344,7 +367,8 @@ Emergency Contact & \\ \hline
 \end{longtable}
 
 \subsection{Global Execution Caps}
-\begin{longtable}{>{\raggedright\arraybackslash}p{2.8in}p{3.2in}}
+% Fixed: 2.6in + 3.4in = 6.0in (safe)
+\begin{longtable}{>{\raggedright\arraybackslash}p{2.6in}p{3.4in}}
 Max runtime per task (seconds) & \\ \hline
 Max tool calls per task & \\ \hline
 Max concurrent tool calls & \\ \hline
@@ -353,7 +377,8 @@ Max unique target resources per task & \\ \hline
 \end{longtable}
 
 \subsection{Write and Privilege Caps}
-\begin{longtable}{>{\raggedright\arraybackslash}p{2.8in}p{3.2in}}
+% Fixed: 2.6in + 3.4in = 6.0in (safe)
+\begin{longtable}{>{\raggedright\arraybackslash}p{2.6in}p{3.4in}}
 Max write actions per task & \\ \hline
 Max privileged actions per session & \\ \hline
 Max irreversible actions per session & 0 (default) \\ \hline
@@ -364,7 +389,8 @@ Max external data exports per task (records or bytes) & \\ \hline
 \end{longtable}
 
 \subsection{Credential Constraints}
-\begin{longtable}{>{\raggedright\arraybackslash}p{2.8in}p{3.2in}}
+% Fixed: 2.6in + 3.4in = 6.0in (safe)
+\begin{longtable}{>{\raggedright\arraybackslash}p{2.6in}p{3.4in}}
 Credential lifetime (minutes) & \\ \hline
 Credential scope granularity (per tool / per action type / per resource) & \\ \hline
 Privileged credentials allowed (yes / no) & \\ \hline
@@ -382,9 +408,11 @@ Human takeover required when: (1) Rollback is unavailable for any proposed write
 Every write action must produce an evidence record containing intent reference, enumerated targets, approvals, tool calls, outcomes, and rollback identifier when available.
 
 \subsection{Suggested starting values (non normative)}
-\begin{longtable}{>{\raggedright\arraybackslash}p{0.7in}p{1.25in}p{1.35in}p{1.55in}p{1.35in}p{1.05in}}
-Tier & Max tool calls per task & Max write actions per task & Max privileged actions per session & Max unique systems per task & Max irreversible actions \\
+% 6 cols: 0.45+1.0+1.05+1.2+1.05+0.75 = 5.5in (safe with tabcolsep overhead)
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{1.0in}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{1.2in}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{0.75in}}
+\textbf{Tier} & \textbf{Max tool calls per task} & \textbf{Max write actions per task} & \textbf{Max privileged actions per session} & \textbf{Max unique systems per task} & \textbf{Max irreversible actions} \\
 \hline
+\endhead
 1 & 20 & 0 & 0 & 2 & 0 \\
 \hline
 2 & 30 & 10 & 0 & 2 & 0 \\
@@ -421,16 +449,26 @@ This appendix lists public references used as anchors for verifiable incidents a
 \begin{thebibliography}{9}
 
 \bibitem{gitlab2017}
-GitLab, ``Postmortem of database outage of January 31,'' 2017. [Online]. Available: \url{https://about.gitlab.com/blog/postmortem-of-database-outage-of-january-31/}. [Accessed: Mar. 17, 2026].
+GitLab, ``Postmortem of database outage of January 31,'' 2017. [Online].
+Available: \url{https://about.gitlab.com/blog/postmortem-of-database-outage-of-january-31/}.
+[Accessed: Mar.\ 17, 2026].
 
 \bibitem{arup2024}
-The Guardian, ``Arup lost \$25m in Hong Kong deepfake video conference scam,'' May 17, 2024. [Online]. Available: \url{https://www.theguardian.com/technology/article/2024/may/17/uk-engineering-arup-deepfake-scam-hong-kong-ai-video}. [Accessed: Mar. 17, 2026].
+The Guardian, ``Arup lost \$25m in Hong Kong deepfake video conference scam,''
+May 17, 2024. [Online].
+Available: \url{https://www.theguardian.com/technology/article/2024/may/17/uk-engineering-arup-deepfake-scam-hong-kong-ai-video}.
+[Accessed: Mar.\ 17, 2026].
 
 \bibitem{cline2026}
-The Verge, ``The AI security nightmare is here and it looks suspiciously like lobster,'' 2026. [Online]. Available: \url{https://www.theverge.com/ai-artificial-intelligence/881574/cline-openclaw-prompt-injection-hack}. [Accessed: Mar. 17, 2026].
+The Verge, ``The AI security nightmare is here and it looks suspiciously like lobster,''
+2026. [Online].
+Available: \url{https://www.theverge.com/ai-artificial-intelligence/881574/cline-openclaw-prompt-injection-hack}.
+[Accessed: Mar.\ 17, 2026].
 
 \bibitem{safeRFC}
-R. S. J. Corral, ``SAFE Intent Framework (RFC-style draft),'' 2026. [Online]. Available: \url{https://doi.org/10.5281/zenodo.18896883}. [Accessed: Mar. 17, 2026].
+R.~S.~J. Corral, ``SAFE Intent Framework (RFC-style draft),'' 2026. [Online].
+Available: \url{https://doi.org/10.5281/zenodo.18896883}.
+[Accessed: Mar.\ 17, 2026].
 
 \end{thebibliography}
 
