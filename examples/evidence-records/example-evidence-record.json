@@ -1,0 +1,67 @@
+{
+  "evidence_record_id": "ER-20260321-142200-001",
+  "created_at": "2026-03-21T14:22:00-04:00",
+  "intent_reference": {
+    "type": "ticket",
+    "id": "CHG-55219",
+    "summary": "Update non-critical customer contact record formatting in CRM",
+    "requestor": "ops-user-17"
+  },
+  "capability_tier": 2,
+  "autonomy_budget_id": "EX-T2-001",
+  "approved_plan": {
+    "plan_id": "PLAN-20260321-142205-002",
+    "approved_by": "reviewer-ops-01",
+    "approval_id": "APP-20260321-142210-77",
+    "approved_at": "2026-03-21T14:22:10-04:00",
+    "plan_summary": "Update contact fields for enumerated CRM record IDs; no deletes; no exports."
+  },
+  "enumerated_targets": {
+    "system": "crm",
+    "resource_type": "contact",
+    "resource_ids": ["C-10441", "C-10442", "C-10443"]
+  },
+  "tool_calls": [
+    {
+      "audit_event_id": "AUD-20260321-142231-901",
+      "tool_id": "crm",
+      "action_type": "update_contact",
+      "targets": ["C-10441"],
+      "status": "success",
+      "started_at": "2026-03-21T14:22:31-04:00",
+      "ended_at": "2026-03-21T14:22:32-04:00"
+    },
+    {
+      "audit_event_id": "AUD-20260321-142233-902",
+      "tool_id": "crm",
+      "action_type": "update_contact",
+      "targets": ["C-10442"],
+      "status": "success",
+      "started_at": "2026-03-21T14:22:33-04:00",
+      "ended_at": "2026-03-21T14:22:34-04:00"
+    },
+    {
+      "audit_event_id": "AUD-20260321-142235-903",
+      "tool_id": "crm",
+      "action_type": "update_contact",
+      "targets": ["C-10443"],
+      "status": "success",
+      "started_at": "2026-03-21T14:22:35-04:00",
+      "ended_at": "2026-03-21T14:22:36-04:00"
+    }
+  ],
+  "outcomes": {
+    "overall_status": "success",
+    "writes_executed": 3,
+    "privileged_actions_executed": 0,
+    "systems_touched": ["crm"]
+  },
+  "rollback": {
+    "available": true,
+    "rollback_ids": ["RB-20260321-142232-33"]
+  },
+  "retention": {
+    "policy": "append-only",
+    "minimum_days": 365
+  }
+}
