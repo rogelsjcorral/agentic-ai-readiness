@@ -1748,7 +1748,7 @@ Security owner: \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_ Executive change authorit
 # Appendix H. Related work and references
 This appendix lists public references used as anchors for verifiable incidents and background context, and includes the author's related work on enforceable intent checks.
 
-References (IEEE style)
+References
 
 [1] GitLab, "Postmortem of database outage of January 31," 2017. [Online]. Available: https://about.gitlab.com/blog/postmortem-of-database-outage-of-january-31/. [Accessed: Mar. 17, 2026].
 
