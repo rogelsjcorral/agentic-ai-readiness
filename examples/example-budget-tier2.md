@@ -1,4 +1,4 @@
-Appendix A. Autonomy budget template
+# Appendix A. Autonomy budget template
 
 ## A.2 Budget Record
 Budget ID: EX-T2-001  
