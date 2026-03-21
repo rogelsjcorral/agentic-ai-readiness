@@ -3,7 +3,7 @@
 
 Rogel S.J. Corral  
 Independent Researcher  
-Draft v1.0
+Draft v1.0  
 Status: For Community Review  
 License: CC BY-SA 4.0
 Date: 2026-03-18
