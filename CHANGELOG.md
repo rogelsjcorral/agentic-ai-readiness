@@ -3,6 +3,11 @@
 This document tracks substantive changes to the paper and its operational artifacts.
 Minor copy edits and formatting changes are not listed.
 
+## Rev v0.1 (2026-03-21)
+- Added license declaration to the paper text.
+- Added examples files.
+- Bumped version to v1.0 and updated date to 2026-03-21 in title block of both LaTeX and Markdown sources.
+
 ## Rev v0.7 (2026-03-18)
 - Completed Appendix B (Failure mode to control mapping) with an 8-row table covering all six Section 4 failure modes plus two failure modes introduced in v0.6 (shared context quorum failure from Section 6.7.1 and audit trail suppression from Section 7.5). Each row maps to primary control, secondary controls, detection metric, and minimum tier gate. Added Section B.3 coverage gap check procedure for pre-Sandbox sign-off.
 - Completed Appendix C (Readiness scorecard checklist) converting the Section 5 scorecard into tiered yes/no operator questions, one subsection per dimension, with each tier's questions explicitly building on the tier below. Any no answer is a blocking finding. Carry-forward requirement stated explicitly: a team qualifying for Tier 3 must satisfy all Tier 1 and Tier 2 items.
