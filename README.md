@@ -20,7 +20,7 @@ The paper is maintained under `paper/`.
 
 - Latest draft (PDF): `paper/agentic-ai-readiness-v0.3.pdf`
 - Latest draft (source): `paper/agentic-ai-readiness-v0.3.md`
-- Latest draft (source): `paper/main.tex`
+- Latest draft (tex): `paper/main.tex`
 
 ## Repository structure
 - `paper/`  
