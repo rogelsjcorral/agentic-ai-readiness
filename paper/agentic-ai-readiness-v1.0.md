@@ -1757,4 +1757,4 @@ References
 
 [3] The Verge, "The AI security nightmare is here and it looks suspiciously like lobster," 2026. [Online]. Available: https://www.theverge.com/ai-artificial-intelligence/881574/cline-openclaw-prompt-injection-hack. [Accessed: Mar. 17, 2026].
 
-[4] R. S. J. Corral, "SAFE Intent Framework (RFC-style draft)," 2026. [Online]. Available: https://doi.org/10.5281/zenodo.18896883. [Accessed: Mar. 17, 2026].
+[4] R. S. J. Corral, "SAFE Intent Framework (RFC-style draft)," 2026. [Online]. Available: https://doi.org/10.5281/zenodo.19161806. [Accessed: Mar. 17, 2026].
