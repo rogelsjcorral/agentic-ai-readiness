@@ -58,7 +58,8 @@ flowchart TD
   I -- No --> L[Verify Outcomes]
   L --> M{Rollback Needed?}
   M -- Yes --> N[Rollback + Verify] --> O[Close Task]
-  M -- No --> O
+  M -- No --> O[Close Task]
+```
 
 ## License
 See `LICENSE`.
