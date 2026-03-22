@@ -618,16 +618,16 @@ This appendix provides schema notation for tool action definitions and evidence 
 ActionSchema {
   tool_id:         string           -- unique identifier for the tool
   tool_version:    string           -- version; schema changes require
-                                   -- requalification
+                                    -- requalification
   tier_minimum:    integer          -- minimum capability tier required
-                                   -- to invoke this tool (1-4)
+                                    -- to invoke this tool (1-4)
   action_types: [
     ActionType {
       name:        string           -- e.g. "create_ticket", "delete_record"
       is_write:    boolean          -- true if action changes external state
       is_privileged: boolean        -- true if Tier 3 controls required
       is_reversible: boolean        -- false means irreversible; blocks
-                                   -- execution unless explicitly approved
+                                    -- execution unless explicitly approved
       parameters: [
         Parameter {
           name:      string
@@ -639,7 +639,7 @@ ActionSchema {
             pattern:     string?    -- regex, applied before execution
             enum_values: [string]?  -- if parameter is an enumeration
             resource_scope: string? -- e.g. "project", "org"; limits
-                                   -- target to declared scope
+                                    -- target to declared scope
           }
         }
       ]
@@ -763,12 +763,12 @@ ActionSchema {
 ```
 EvidenceRecord {
   evidence_id:      string          -- unique; referenced in all
-                                   -- write action audit events
+                                    -- write action audit events
   task_id:          string          -- parent task identifier
   session_id:       string          -- agent session identifier
   created_at:       timestamp       -- UTC, millisecond resolution
   intent_ref:       string          -- reference to the original
-                                   -- user request or ticket
+                                    -- user request or ticket
   plan_ref:         string          -- identifier of the approved plan
   approved_plan: ApprovedPlan {
     plan_id:        string
@@ -779,7 +779,7 @@ EvidenceRecord {
     target_set:     [resource_id]   -- enumerated targets; no wildcards
     action_classes: [string]        -- list of action type names in plan
     diff_summary:   string          -- human-readable change summary
-                                   -- shown to approver at approval time
+                                    -- shown to approver at approval time
   }
   tool_calls: [
     ToolCallRecord {
@@ -791,9 +791,9 @@ EvidenceRecord {
                                           -- not raw values
       target_ids:       [resource_id]
       outcome_status:   string      -- "success" | "failure" |
-                                   -- "blocked" | "rolled_back"
+                                    -- "blocked" | "rolled_back"
       rollback_id:      string?     -- present if outcome_status
-                                   -- is "rolled_back"
+                                    -- is "rolled_back"
     }
   ]
   rollback_refs: [
@@ -803,11 +803,11 @@ EvidenceRecord {
       rolled_back_at:   timestamp
       rollback_status:  string      -- "success" | "partial" | "failed"
       verification:     string      -- result of post-rollback
-                                   -- state verification
+                                    -- state verification
     }
   ]
   closed_at:        timestamp?      -- set when task completes
-                                   -- or is terminated
+                                    -- or is terminated
 }
 ```
 
@@ -833,22 +833,22 @@ AuditEvent {
   parameter_hashes: {string: string}  -- field name to hash of value;
                                       -- no raw parameter values
   outcome_status:   string          -- "success" | "failure" |
-                                   -- "blocked" | "rolled_back"
+                                    -- "blocked" | "rolled_back"
   evidence_id:      string          -- required at Tier 2 and above;
-                                   -- omit only at Tier 1
+                                    -- omit only at Tier 1
 
   -- Optional fields (required for specific metrics)
   plan_ref:         string?         -- required to compute UAR
   approval_id:      string?         -- required at Tier 3+; used
-                                   -- for UAR and POI computation
+                                    -- for UAR and POI computation
   rollback_id:      string?         -- present when outcome is
-                                   -- "rolled_back"; used for RSR
+                                    -- "rolled_back"; used for RSR
   parent_task_id:   string?         -- required at Tier 4 for cross-
-                                   -- agent evidence continuity
+                                    -- agent evidence continuity
   anomaly_flags:    [string]?       -- signal names triggered during
-                                   -- this invocation (see Section 7.3)
+                                    -- this invocation (see Section 7.3)
   latency_ms:       integer?        -- milliseconds from plan proposal
-                                   -- to tool invocation; used for TDH
+                                    -- to tool invocation; used for TDH
   permission_scopes_used: [string]? -- required for POI computation
 }
 ```
@@ -996,7 +996,7 @@ AuditEvent {
   outcome_status:   "success"
   evidence_id:      "evr_cc2255"   -- same evidence record as parent
   plan_ref:         "plan_ee5533"  -- inherited from parent
-  approval_id:      "appr_dd6644" -- inherited from parent
+  approval_id:      "appr_dd6644"  -- inherited from parent
   parent_task_id:   "task_parent_88cc"
                                    -- links delegate to parent;
                                    -- required for evidence continuity
