@@ -6,7 +6,7 @@ Independent Researcher
 Draft v1.0  
 Status: For Community Review  
 License: CC BY-SA 4.0  
-Date: 2026-03-18
+Date: 2026-03-21
 
 **Abstract**  
 Agentic AI changes the deployment shape of LLM systems. When an LLM can plan, call tools, and execute multi step actions, the primary risk shifts from incorrect text to incorrect state change. This field manual proposes an operational readiness approach for deploying tool using agents, including capability tiers, an autonomy budget, a readiness scorecard, and an evaluation harness with measurable metrics. The goal is not to argue for or against agents. The goal is to define a minimum operational bar for delegated autonomy and a rollout approach that reduces preventable incidents.
