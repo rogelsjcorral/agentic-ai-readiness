@@ -45,20 +45,20 @@ Tier 2 and above is not eligible without rollback readiness and evidence capture
 
 ```mermaid
 flowchart TD
-  A[Intent / Ticket] --> B[Enumerate Targets]
-  B --> C[Plan (Structured Actions)]
-  C --> D{Approval Required?}
-  D -- No --> E[Mint Scoped Credentials]
-  D -- Yes --> D1[Two-Channel Confirmation<br/>Targets + Diffs + Approval ID] --> E
-  E --> F[Execute Tool Calls<br/>(Allowlisted + Schema-Validated)]
-  F --> G[Emit Audit Events<br/>(Append-Only)]
-  G --> H[Generate Evidence Record<br/>(Intent, Targets, Approvals, Calls, Outcomes)]
-  H --> I{Anomaly or Injection Signal?}
-  I -- Yes --> J[Lockdown Mode<br/>Revoke Credentials + Stop Queue] --> K[Human Takeover / Review]
-  I -- No --> L[Verify Outcomes]
-  L --> M{Rollback Needed?}
-  M -- Yes --> N[Rollback + Verify] --> O[Close Task]
-  M -- No --> O[Close Task]
+A["Intent / Ticket"] --> B["Enumerate Targets"]
+B --> C["Plan (Structured Actions)"]
+C --> D{"Approval Required?"}
+D -- "No" --> E["Mint Scoped Credentials"]
+D -- "Yes" --> D1["Two-Channel Confirmation<br/>Targets + Diffs + Approval ID"] --> E
+E --> F["Execute Tool Calls<br/>(Allowlisted + Schema-Validated)"]
+F --> G["Emit Audit Events<br/>(Append-Only)"]
+G --> H["Generate Evidence Record<br/>(Intent, Targets, Approvals, Calls, Outcomes)"]
+H --> I{"Anomaly or Injection Signal?"}
+I -- "Yes" --> J["Lockdown Mode<br/>Revoke Credentials + Stop Queue"] --> K["Human Takeover / Review"]
+I -- "No" --> L["Verify Outcomes"]
+L --> M{"Rollback Needed?"}
+M -- "Yes" --> N["Rollback + Verify"] --> O["Close Task"]
+M -- "No" --> O["Close Task"]
 ```
 
 ## License
