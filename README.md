@@ -43,6 +43,22 @@ Use the document as an implementation sequence:
 
 Tier 2 and above is not eligible without rollback readiness and evidence capture for every permitted write action.
 
+flowchart TD
+  A[Intent / Ticket] --> B[Enumerate Targets]
+  B --> C[Plan (Structured Actions)]
+  C --> D{Approval Required?}
+  D -- No --> E[Mint Scoped Credentials]
+  D -- Yes --> D1[Two-Channel Confirmation\nTargets + Diffs + Approval ID] --> E[Mint Scoped Credentials]
+  E --> F[Execute Tool Calls\n(Allowlisted + Schema-Validated)]
+  F --> G[Emit Audit Events\nAppend-Only]
+  G --> H[Generate Evidence Record\n(Intent, Targets, Approvals, Calls, Outcomes)]
+  H --> I{Anomaly or Injection Signal?}
+  I -- Yes --> J[Lockdown Mode\nRevoke Credentials + Stop Queue] --> K[Human Takeover / Review]
+  I -- No --> L[Verify Outcomes]
+  L --> M{Rollback Needed?}
+  M -- Yes --> N[Rollback + Verify] --> O[Close Task]
+  M -- No --> O[Close Task]
+
 ## License
 See `LICENSE`.
 
