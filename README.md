@@ -15,6 +15,9 @@ Draft for community review. Feedback is welcomed, especially on:
 - Metric definitions and better formulas
 - Tier 4 (multi-agent) operational controls
 
+## Why This Is On GitHub
+This repository maintains an auditable, version-controlled history of the paper's evolution. All changes are tracked with commit history, enabling transparent development and community contribution.
+
 ## Paper
 The paper is maintained under `paper/`.
 
