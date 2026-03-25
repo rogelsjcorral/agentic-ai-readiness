@@ -71,8 +71,8 @@ See `LICENSE`.
 
 ## Citation
 
-Version DOI (v1.0): <https://doi.org/10.5281/zenodo.19211676>
-Concept DOI (all versions): <https://doi.org/10.5281/zenodo.19211667>
+Version DOI (v1.0): <https://doi.org/10.5281/zenodo.19211676>  
+Concept DOI (all versions): <https://doi.org/10.5281/zenodo.19211667>  
 Zenodo record: <https://zenodo.org/records/19211667>
 
 ## Contributing
