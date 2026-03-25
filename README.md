@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19211667.svg)](https://doi.org/10.5281/zenodo.19211667)
+
 # Operational Readiness Criteria for Tool-Using LLM Agents
 
 Operational readiness criteria for tool-using LLM agents: autonomy budgets, controls, metrics, and rollout gates for delegated autonomy.
@@ -68,7 +70,10 @@ M -- "No" --> O["Close Task"]
 See `LICENSE`.
 
 ## Citation
-If you cite this work, use `CITATION.cff` (or the Zenodo DOI once published).
+
+Version DOI (v1.0): <https://doi.org/10.5281/zenodo.19211676>
+Concept DOI (all versions): <https://doi.org/10.5281/zenodo.19211667>
+Zenodo record: <https://zenodo.org/records/19211667>
 
 ## Contributing
 Suggestions and corrections are welcome.
